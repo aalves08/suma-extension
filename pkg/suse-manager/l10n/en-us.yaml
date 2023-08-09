@@ -1,0 +1,13 @@
+suma:
+  cluster-details:
+    patches-col: SUMA patches
+  node-details:
+    tabs:
+      node: Node
+      patches: SUMA patches
+    cols:
+      advisory-name: Name
+      advisory-status: Status
+      advisory-type: Type
+      advisory-date: Date
+      advisory-update-date: Update Date
