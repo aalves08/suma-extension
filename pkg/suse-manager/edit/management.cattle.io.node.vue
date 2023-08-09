@@ -7,6 +7,7 @@ import { NORMAN } from '@shell/config/types';
 import ResourceTabs from '@shell/components/form/ResourceTabs';
 import Tab from '@shell/components/Tabbed/Tab';
 import SortableTable from '@shell/components/SortableTable';
+import { _VIEW } from '@shell/config/query-params';
 export default {
   components: {
     CruResource,
@@ -29,6 +30,7 @@ export default {
   },
   data() {
     return {
+      viewMode:           _VIEW,
       name:                '',
       loading:             true,
       sumaPatchesHeaders: [
@@ -53,18 +55,18 @@ export default {
           sort:     'advisory_type',
         },
         {
-          name:     'suma-date',
-          labelKey: 'suma.node-details.cols.advisory-date',
-          value:    'date',
-          sort:     'date',
+          name:     'advisory-synopsis',
+          labelKey: 'suma.node-details.cols.advisory-synopsis',
+          value:    'advisory_synopsis',
+          sort:     'advisory_synopsis',
         },
         {
           name:     'suma-update-date',
           labelKey: 'suma.node-details.cols.advisory-update-date',
           value:    'update_date',
-          sort:     'update_date',
+          sort:     'update_date:desc',
         },
-      ]
+      ],
     };
   },
   methods: {
@@ -135,6 +137,7 @@ export default {
         />
       </Tab>
       <Tab
+        v-if="mode === viewMode"
         name="suma-patches"
         label-key="suma.node-details.tabs.patches"
         :weight="4"
@@ -144,6 +147,7 @@ export default {
           :rows="sumaPatches"
           :table-actions="false"
           :row-actions="false"
+          default-sort-by="suma-update-date"
         />
       </Tab>
     </ResourceTabs>

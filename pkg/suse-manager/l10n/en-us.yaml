@@ -1,6 +1,9 @@
 suma:
   cluster-details:
     patches-col: SUMA patches
+    table-actions:
+      patch-os: SUMA apply OS patches
+      patch-os-single: SUMA apply OS patch
   node-details:
     tabs:
       node: Node
@@ -8,6 +11,7 @@ suma:
     cols:
       advisory-name: Name
       advisory-status: Status
+      advisory-synopsis: Synopsis
       advisory-type: Type
       advisory-date: Date
       advisory-update-date: Update Date
