@@ -26,7 +26,9 @@ export default function(plugin: IPlugin, args:any) {
   // add table col on machine pools table under cluster details
   plugin.addTableColumn(
     TableColumnLocation.RESOURCE,
-    { resource: ['management.cattle.io.node'] },
+    {
+      resource: ['provisioning.cattle.io.cluster'], mode: ['detail'], hash: ['node-pools']
+    },
     {
       name:     'suma-patches',
       labelKey: 'suma.cluster-details.patches-col',
@@ -34,7 +36,7 @@ export default function(plugin: IPlugin, args:any) {
         const sumaSystems = args.store.getters['suma/getSumaSystems'];
         const currSystem = sumaSystems.find(g => g?.profile_name === row.nameDisplay);
 
-        console.error('sumaSystems', sumaSystems); // eslint-disable-line no-console
+        // console.error('sumaSystems', sumaSystems); // eslint-disable-line no-console
 
         return currSystem?.listLatestUpgradablePackages?.length || '---';
       },
@@ -47,12 +49,17 @@ export default function(plugin: IPlugin, args:any) {
   // table action - apply all OS patches available to a particular machine
   plugin.addAction(
     ActionLocation.TABLE,
-    { resource: ['provisioning.cattle.io.cluster'], mode: ['detail'] },
+    {
+      resource: ['provisioning.cattle.io.cluster'], mode: ['detail'], hash: ['node-pools']
+    },
     {
       labelKey: 'suma.cluster-details.table-actions.patch-os',
       icon:     'icon-play',
       enabled(ctx: any) {
-        return true;
+        const sumaSystems = args.store.getters['suma/getSumaSystems'];
+        const sumaSystemFound = sumaSystems.find(s => s.profile_name === ctx.nameDisplay);
+
+        return !!sumaSystemFound;
       },
       invoke(opts: ActionOpts, values: any[]) {
         const node = values[0];
@@ -67,10 +74,12 @@ export default function(plugin: IPlugin, args:any) {
     }
   );
 
-  // table action - apply a given OS patch
+  // table action - apply a given OS patch (SUMA patches list needs to be a spoofedType resource for this to work!!!!)
   // plugin.addAction(
   //   ActionLocation.TABLE,
-  //   { resource: ['management.cattle.io.node'], mode: ['detail'] },
+  //   {
+  //     resource: ['management.cattle.io.node'], mode: ['detail'], hash: ['suma-patches']
+  //   },
   //   {
   //     labelKey: 'suma.cluster-details.table-actions.patch-os-single',
   //     icon:     'icon-play',
