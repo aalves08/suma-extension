@@ -9,7 +9,7 @@ import actions from './actions';
 const sumaFactory = (): CoreStoreSpecifics => {
   return {
     state() {
-      return { sumaSystems: [] };
+      return { sumaSystems: [], sumaActionsInProgress: [] };
     },
 
     getters: { ...getters },

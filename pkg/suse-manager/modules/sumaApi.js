@@ -86,3 +86,38 @@ export async function sumaScheduleApplyErrata(store, sids, errataIds) {
 
   return groups.data?.result || [];
 }
+
+/**
+ * SUMA list all actions
+ * @param {object} store - Vue store object
+ */
+export async function sumaListAllActions(store) {
+  const groups = await store.dispatch(`management/request`, {
+    url:             `/rhn/manager/api/schedule/listAllActions`,
+    responseType:    'application/json',
+    withCredentials: true
+  }, { root: true });
+
+  return groups.data?.result || [];
+}
+
+/**
+ * SUMA list actions in progress
+ * @param {object} store - Vue store object
+ * @param {boolean} storeData - Whether API call result should be saved in store
+ */
+export async function sumaListActionsInProgress(store, storeData) {
+  const groups = await store.dispatch(`management/request`, {
+    url:             `/rhn/manager/api/schedule/listInProgressActions`,
+    responseType:    'application/json',
+    withCredentials: true
+  }, { root: true });
+
+  const res = groups.data?.result || [];
+
+  if (storeData) {
+    store.dispatch('suma/updateSumaActionsInProgress', res);
+  }
+
+  return res;
+}

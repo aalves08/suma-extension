@@ -1,6 +1,8 @@
 <script>
 import { CAPI, MANAGEMENT } from '@shell/config/types';
-import { sumaLogin, sumaListAllGroups, sumaListGroupSystems, sumaListLatestUpgradablePackages } from '../modules/sumaApi';
+import {
+  sumaLogin, sumaListAllGroups, sumaListGroupSystems, sumaListLatestUpgradablePackages, sumaListActionsInProgress
+} from '../modules/sumaApi';
 
 export default {
   name: 'SumaPanel',
@@ -12,6 +14,9 @@ export default {
       login:    'admin',
       password: 'susemanager'
     });
+
+    // populate SUMA actions in progress
+    sumaListActionsInProgress(this.$store, true);
 
     // this is where we get vital information from (either cluster or node details depending on the view)
     const currScreenValueProp = this.$parent?.$parent?.value;
@@ -31,7 +36,17 @@ export default {
           for (let x = 0; x < sumaSystems.length; x++) {
             const sumaPackages = await sumaListLatestUpgradablePackages(this.$store, sumaSystems[x]?.id);
 
-            sumaSystems[x].listLatestUpgradablePackages = sumaPackages;
+            const tipifyedSumaPackages = sumaPackages.map((pkg) => {
+              return {
+                ...pkg,
+                metadata:      { name: `${ pkg.id }` },
+                type:          'crd.sumapatches',
+                kind:          'crd.sumapatches',
+                sumaErrataUrl: `https://ec2-52-206-103-214.compute-1.amazonaws.com/rhn/errata/details/Details.do?eid=${ pkg.id }`
+              };
+            });
+
+            sumaSystems[x].listLatestUpgradablePackages = tipifyedSumaPackages;
             sumaSystems[x].clusterGroup = sumaGroupFound.name;
           }
         }
@@ -54,7 +69,17 @@ export default {
           if (sumaSystemFound) {
             const sumaPackages = await sumaListLatestUpgradablePackages(this.$store, sumaSystemFound.id);
 
-            sumaSystems[sumaSystemIndex].listLatestUpgradablePackages = sumaPackages;
+            const tipifyedSumaPackages = sumaPackages.map((pkg) => {
+              return {
+                ...pkg,
+                metadata:      { name: `${ pkg.id }` },
+                type:          'crd.sumapatches',
+                kind:          'crd.sumapatches',
+                sumaErrataUrl: `https://ec2-52-206-103-214.compute-1.amazonaws.com/rhn/errata/details/Details.do?eid=${ pkg.id }`
+              };
+            });
+
+            sumaSystems[sumaSystemIndex].listLatestUpgradablePackages = tipifyedSumaPackages;
             sumaSystems[sumaSystemIndex].clusterGroup = sumaGroupFound.name;
           }
         }

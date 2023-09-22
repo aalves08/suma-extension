@@ -97,12 +97,7 @@ export default {
       let sumaPatches = [];
 
       if (currSystem) {
-        sumaPatches = currSystem.listLatestUpgradablePackages.map((item) => {
-          return {
-            ...item,
-            sumaErrataUrl: `https://ec2-52-206-103-214.compute-1.amazonaws.com/rhn/errata/details/Details.do?eid=${ item.id }`
-          };
-        });
+        sumaPatches = currSystem.listLatestUpgradablePackages;
       }
 
       return sumaPatches;
