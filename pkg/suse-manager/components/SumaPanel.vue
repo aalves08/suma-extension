@@ -1,5 +1,6 @@
 <script>
 import { CAPI, MANAGEMENT } from '@shell/config/types';
+import { SUMA_CONFIG } from '../suma-config';
 import {
   sumaLogin, sumaListAllGroups, sumaListGroupSystems, sumaListLatestUpgradablePackages, sumaListActionsInProgress
 } from '../modules/sumaApi';
@@ -11,8 +12,8 @@ export default {
     let sumaSystems = [];
 
     const login = await sumaLogin(this.$store, {
-      login:    'admin',
-      password: 'susemanager'
+      login:    SUMA_CONFIG.USER,
+      password: SUMA_CONFIG.PASSWORD
     });
 
     // populate SUMA actions in progress
@@ -42,7 +43,7 @@ export default {
                 metadata:      { name: `${ pkg.id }` },
                 type:          'crd.sumapatches',
                 kind:          'crd.sumapatches',
-                sumaErrataUrl: `https://ec2-52-206-103-214.compute-1.amazonaws.com/rhn/errata/details/Details.do?eid=${ pkg.id }`
+                sumaErrataUrl: `${ SUMA_CONFIG.BASE_URL }/rhn/errata/details/Details.do?eid=${ pkg.id }`
               };
             });
 
@@ -75,7 +76,7 @@ export default {
                 metadata:      { name: `${ pkg.id }` },
                 type:          'crd.sumapatches',
                 kind:          'crd.sumapatches',
-                sumaErrataUrl: `https://ec2-52-206-103-214.compute-1.amazonaws.com/rhn/errata/details/Details.do?eid=${ pkg.id }`
+                sumaErrataUrl: `${ SUMA_CONFIG.BASE_URL }/rhn/errata/details/Details.do?eid=${ pkg.id }`
               };
             });
 

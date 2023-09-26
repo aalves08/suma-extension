@@ -1,3 +1,9 @@
+export const SUMA_CONFIG = {
+  BASE_URL: '',
+  USER:     '',
+  PASSWORD: ''
+};
+
 export function init($plugin, store) {
   const { spoofedType } = $plugin.DSL(store, $plugin.name);
 
