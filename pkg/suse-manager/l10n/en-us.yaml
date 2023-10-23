@@ -1,4 +1,7 @@
 suma:
+  patch-status-updating: updating
+  notification:
+    title: Suse Manager is performing the following actions
   cluster-details:
     patches-col: SUMA patches
     table-actions:

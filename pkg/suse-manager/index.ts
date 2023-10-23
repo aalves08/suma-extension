@@ -3,8 +3,19 @@ import {
   TableColumnLocation, PanelLocation, ActionLocation, IPlugin, ActionOpts
 } from '@shell/core/types';
 import { MANAGEMENT, CAPI } from '@shell/config/types';
+import Vue from 'vue';
 import sumaStore from './store/suma-store';
-import { sumaScheduleApplyErrata, sumaListActionsInProgress } from './modules/sumaApi';
+import { sumaScheduleApplyErrata } from './modules/sumaApi';
+
+// Register local formatters
+const components = require.context('./components/formatter', false, /[A-Z]\w+\.(vue)$/);
+
+components.keys().forEach((fileName: any) => {
+  const componentConfig = components(fileName);
+  const componentName = fileName.split('/').pop().split('.')[0];
+
+  Vue.component(componentName, componentConfig.default || componentConfig);
+});
 
 // Init the package
 export default function(plugin: IPlugin, args:any) {
@@ -13,9 +24,6 @@ export default function(plugin: IPlugin, args:any) {
 
   // Provide plugin metadata from package.json
   plugin.metadata = require('./package.json');
-
-  // registering spoofed type
-  plugin.addProduct(require('./suma-config'));
 
   // create new SUMA store
   plugin.addDashboardStore(sumaStore.config.namespace, sumaStore.specifics, sumaStore.config);
@@ -43,15 +51,17 @@ export default function(plugin: IPlugin, args:any) {
     {
       name:          'suma-patches',
       labelKey:      'suma.cluster-details.patches-col',
-      formatter:     'Link',
+      formatter:     'InternalLinkUpdatingIndicator',
       formatterOpts: {
-        options: { internal: true },
-        urlKey:  'sumaPatchesListLink'
+        loadingGetter: 'suma-store/areSumaActionsInProgress',
+        urlKey:        'sumaPatchesListLink'
       },
       dashIfEmpty: true,
       getValue:    (row: any) => {
-        const sumaSystems = args.store.getters['suma/getSumaSystems'];
-        const currSystem = sumaSystems.find((g: any) => g?.profile_name === row.nameDisplay);
+        const sumaSystems = args.store.getters['suma-store/getSumaSystems'];
+        const currSystem = sumaSystems.find((g: any) => {
+          return g?.profile_name === row.nameDisplay;
+        });
 
         return currSystem?.listLatestUpgradablePackages?.length ? `${ currSystem?.listLatestUpgradablePackages?.length }` : '---';
       },
@@ -71,54 +81,27 @@ export default function(plugin: IPlugin, args:any) {
       labelKey: 'suma.cluster-details.table-actions.patch-os',
       icon:     'icon-play',
       enabled(ctx: any) {
-        const sumaSystems = args.store.getters['suma/getSumaSystems'];
+        const areSumaActionsInProgress = args.store.getters['suma-store/areSumaActionsInProgress'](ctx.nameDisplay);
+        const sumaSystems = args.store.getters['suma-store/getSumaSystems'];
         const sumaSystemFound = sumaSystems.find((s: any) => s.profile_name === ctx.nameDisplay);
+
+        if (areSumaActionsInProgress) {
+          return false;
+        }
 
         return !!sumaSystemFound;
       },
       invoke(opts: ActionOpts, values: any[]) {
         const node = values[0];
-        const sumaSystems = args.store.getters['suma/getSumaSystems'];
+        const sumaSystems = args.store.getters['suma-store/getSumaSystems'];
         const sumaSystemFound = sumaSystems.find((s: any) => s.profile_name === node.nameDisplay);
 
         // TODO: change logic to schedule patches application all in one go
         if (sumaSystemFound && sumaSystemFound.listLatestUpgradablePackages?.length) {
           // perform OS patch apply
           sumaScheduleApplyErrata(args.store, [sumaSystemFound.id], [sumaSystemFound.listLatestUpgradablePackages[0].id]);
-
-          // update list of suma actions in progress
-          setTimeout(() => {
-            sumaListActionsInProgress(args.store, true);
-          }, 5000 );
         }
       }
     }
   );
-
-  // table action - apply a given OS patch (SUMA patches list needs to be a spoofedType resource for this to work!!!! - _availableActions belongs in a base class - resource-class file)
-  // plugin.addAction(
-  //   ActionLocation.TABLE,
-  //   {
-  //     resource: [MANAGEMENT.NODE], mode: ['detail'], hash: ['suma-patches']
-  //   },
-  //   {
-  //     labelKey: 'suma.cluster-details.table-actions.patch-os-single',
-  //     icon:     'icon-play',
-  //     enabled(ctx: any) {
-  //       return true;
-  //     },
-  //     invoke(opts: ActionOpts, values: any[]) {
-  //       // const node = values[0];
-  //       // const sumaSystems = args.store.getters['suma/getSumaSystems'];
-  //       // const sumaSystemFound = sumaSystems.find((s: any) => s.profile_name === node.nameDisplay);
-
-  //       // // TODO: change logic to schedule patches application all in one go
-  //       // if (sumaSystemFound && sumaSystemFound.listLatestUpgradablePackages?.length) {
-  //       //   sumaScheduleApplyErrata(args.store, [sumaSystemFound.id], [sumaSystemFound.listLatestUpgradablePackages[0].id]);
-  //       // }
-
-  //       console.log('table action executed 1', this, opts, values); // eslint-disable-line no-console
-  //     }
-  //   }
-  // );
 }

@@ -9,7 +9,7 @@ import actions from './actions';
 const sumaFactory = (): CoreStoreSpecifics => {
   return {
     state() {
-      return { sumaSystems: [], sumaActionsInProgress: [] };
+      return { sumaSystems: [], notifications: {} };
     },
 
     getters: { ...getters },
@@ -19,7 +19,7 @@ const sumaFactory = (): CoreStoreSpecifics => {
     actions: { ...actions },
   };
 };
-const config: CoreStoreConfig = { namespace: 'suma' };
+const config: CoreStoreConfig = { namespace: 'suma-store' };
 
 export default {
   specifics: sumaFactory(),

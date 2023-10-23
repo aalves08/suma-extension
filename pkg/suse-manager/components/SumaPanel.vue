@@ -1,23 +1,16 @@
 <script>
 import { CAPI, MANAGEMENT } from '@shell/config/types';
 import { SUMA_CONFIG } from '../suma-config';
-import {
-  sumaLogin, sumaListAllGroups, sumaListGroupSystems, sumaListLatestUpgradablePackages, sumaListActionsInProgress
-} from '../modules/sumaApi';
+import { sumaLogin } from '../modules/sumaApi';
 
 export default {
   name: 'SumaPanel',
   async fetch() {
     // Invisible panel used in cluster details view and node details view (must account for both cases)
-    let sumaSystems = [];
-
     const login = await sumaLogin(this.$store, {
       login:    SUMA_CONFIG.USER,
       password: SUMA_CONFIG.PASSWORD
     });
-
-    // populate SUMA actions in progress
-    sumaListActionsInProgress(this.$store, true);
 
     // this is where we get vital information from (either cluster or node details depending on the view)
     const currScreenValueProp = this.$parent?.$parent?.value;
@@ -26,68 +19,28 @@ export default {
     if (currScreenValueProp && currScreenValueProp.type === CAPI.RANCHER_CLUSTER && login) {
       const currProvCluster = currScreenValueProp;
 
-      const sumaGroups = await sumaListAllGroups(this.$store);
-
       if (currProvCluster?.status?.clusterName) {
-        const sumaGroupFound = sumaGroups.find(g => g.name === currProvCluster?.status?.clusterName);
-
-        if (sumaGroupFound && sumaGroupFound['system_count']) {
-          sumaSystems = await sumaListGroupSystems(this.$store, sumaGroupFound.name);
-
-          for (let x = 0; x < sumaSystems.length; x++) {
-            const sumaPackages = await sumaListLatestUpgradablePackages(this.$store, sumaSystems[x]?.id);
-
-            const tipifyedSumaPackages = sumaPackages.map((pkg) => {
-              return {
-                ...pkg,
-                metadata:      { name: `${ pkg.id }` },
-                type:          'crd.sumapatches',
-                kind:          'crd.sumapatches',
-                sumaErrataUrl: `${ SUMA_CONFIG.BASE_URL }/rhn/errata/details/Details.do?eid=${ pkg.id }`
-              };
-            });
-
-            sumaSystems[x].listLatestUpgradablePackages = tipifyedSumaPackages;
-            sumaSystems[x].clusterGroup = sumaGroupFound.name;
-          }
-        }
+        this.$store.dispatch('suma-store/fetchSumaSystemsList', {
+          store:       this.$store,
+          clusterName: currProvCluster?.status?.clusterName
+        });
+      } else {
+        console.error('we are missing the cluster name to get SUMA data', currProvCluster); // eslint-disable-line no-console
       }
     // here we are looking at the node details view, where we only load the list of upgradable packages
     } else if (currScreenValueProp && currScreenValueProp.type === MANAGEMENT.NODE && login) {
       const currNode = currScreenValueProp;
 
-      const sumaGroups = await sumaListAllGroups(this.$store);
-
-      // here we get the cluster name
-      if (currNode?.mgmtClusterId) {
-        const sumaGroupFound = sumaGroups.find(g => g.name === currNode?.mgmtClusterId);
-
-        if (sumaGroupFound && sumaGroupFound['system_count']) {
-          sumaSystems = await sumaListGroupSystems(this.$store, sumaGroupFound.name);
-          const sumaSystemFound = sumaSystems.find(g => g.profile_name === currNode?.nameDisplay);
-          const sumaSystemIndex = sumaSystems.findIndex(g => g.profile_name === currNode?.nameDisplay);
-
-          if (sumaSystemFound) {
-            const sumaPackages = await sumaListLatestUpgradablePackages(this.$store, sumaSystemFound.id);
-
-            const tipifyedSumaPackages = sumaPackages.map((pkg) => {
-              return {
-                ...pkg,
-                metadata:      { name: `${ pkg.id }` },
-                type:          'crd.sumapatches',
-                kind:          'crd.sumapatches',
-                sumaErrataUrl: `${ SUMA_CONFIG.BASE_URL }/rhn/errata/details/Details.do?eid=${ pkg.id }`
-              };
-            });
-
-            sumaSystems[sumaSystemIndex].listLatestUpgradablePackages = tipifyedSumaPackages;
-            sumaSystems[sumaSystemIndex].clusterGroup = sumaGroupFound.name;
-          }
-        }
+      if (currNode?.mgmtClusterId && currNode?.nameDisplay) {
+        this.$store.dispatch('suma-store/fetchSumaSystemsList', {
+          store:       this.$store,
+          clusterName: currNode?.mgmtClusterId,
+          machineName: currNode?.nameDisplay,
+        });
+      } else {
+        console.error('we are missing either the cluster name or the machine name to get SUMA data', currNode); // eslint-disable-line no-console
       }
     }
-
-    this.$store.dispatch('suma/updateSumaSystems', sumaSystems);
   }
 };
 </script>

@@ -1,3 +1,5 @@
+import { allHash } from '@shell/utils/promise';
+
 /**
  * SUMA login endpoint
  * @param {object} store - Vue store object
@@ -67,13 +69,28 @@ export async function sumaListLatestUpgradablePackages(store, sid) {
 }
 
 /**
+ * SUMA list of all event regarding a given system
+ * @param {object} store - Vue store object
+ * @param {string, int} sid - system id
+ */
+export async function sumaListSystemEvents(store, sid) {
+  const groups = await store.dispatch(`management/request`, {
+    url:             `/rhn/manager/api/system/listSystemEvents?sid=${ sid }`,
+    responseType:    'application/json',
+    withCredentials: true
+  }, { root: true });
+
+  return groups.data?.result || [];
+}
+
+/**
  * SUMA apply selected OS patches (upgradable packages) to a given system
  * @param {object} store - Vue store object
  * @param {array} sid - array of system ids
  * @param {array} errataIds - array of patches (erratas) ids
  */
 export async function sumaScheduleApplyErrata(store, sids, errataIds) {
-  const groups = await store.dispatch(`management/request`, {
+  const schedule = await store.dispatch(`management/request`, {
     url:             `/rhn/manager/api/system/scheduleApplyErrata`,
     method:  'post',
     data:   {
@@ -84,40 +101,34 @@ export async function sumaScheduleApplyErrata(store, sids, errataIds) {
     withCredentials: true
   }, { root: true });
 
-  return groups.data?.result || [];
-}
+  if (schedule.status === 200) {
+    // show success notification
+    store.dispatch('suma-store/updateNotifications', {
+      type:    'success',
+      message: 'OS Patches successfully scheduled. OS Patching will begin shortly.'
+    });
 
-/**
- * SUMA list all actions
- * @param {object} store - Vue store object
- */
-export async function sumaListAllActions(store) {
-  const groups = await store.dispatch(`management/request`, {
-    url:             `/rhn/manager/api/schedule/listAllActions`,
-    responseType:    'application/json',
-    withCredentials: true
-  }, { root: true });
+    // prepare all requests for SUMA system IDs for updating events list
+    const reqs = {};
 
-  return groups.data?.result || [];
-}
+    sids.forEach((sid) => {
+      store.dispatch('suma-store/updateSystemEventsList', {
+        store,
+        sid
+      });
+    });
 
-/**
- * SUMA list actions in progress
- * @param {object} store - Vue store object
- * @param {boolean} storeData - Whether API call result should be saved in store
- */
-export async function sumaListActionsInProgress(store, storeData) {
-  const groups = await store.dispatch(`management/request`, {
-    url:             `/rhn/manager/api/schedule/listInProgressActions`,
-    responseType:    'application/json',
-    withCredentials: true
-  }, { root: true });
-
-  const res = groups.data?.result || [];
-
-  if (storeData) {
-    store.dispatch('suma/updateSumaActionsInProgress', res);
+    // update list of suma actions in progress after a given timeout
+    setTimeout(async() => {
+      await allHash(reqs);
+    }, 4000 );
+  } else {
+    // show error notification
+    store.dispatch('suma-store/updateNotifications', {
+      type:    'error',
+      message: 'Something went wrong when applying OS patches. Please try again.'
+    });
   }
 
-  return res;
+  return schedule;
 }

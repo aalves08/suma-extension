@@ -43,10 +43,10 @@ export default {
           formatterOpts: { urlKey: 'sumaErrataUrl' },
         },
         {
-          name:     'advisory-status',
+          name:     'status',
           labelKey: 'suma.node-details.cols.advisory-status',
-          value:    'advisory_status',
-          sort:     'advisory_status',
+          value:    'status',
+          sort:     'status',
         },
         {
           name:     'advisory-type',
@@ -92,7 +92,7 @@ export default {
       return this.value.doneOverride;
     },
     sumaPatches() {
-      const sumaSystems = this.$store.getters['suma/getSumaSystems'];
+      const sumaSystems = this.$store.getters['suma-store/getSumaSystems'];
       const currSystem = sumaSystems.find(g => g?.profile_name === this.value.nameDisplay);
       let sumaPatches = [];
 
@@ -141,7 +141,7 @@ export default {
           :headers="sumaPatchesHeaders"
           :rows="sumaPatches"
           :table-actions="false"
-          :row-actions="false"
+          :row-actions="true"
           default-sort-by="suma-update-date"
         />
       </Tab>
