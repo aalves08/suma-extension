@@ -77,15 +77,15 @@ export default {
               store:       this.$store,
               clusterName: this.clusterName
             });
-          }, 4000 );
+          }, 5000 );
 
-          // let's double-down on the request because sometimes it takes a long time to update on SUMA side
+          // max time to update on the backend is 60sec, let's do it one last time in 50sec
           setTimeout(() => {
             this.$store.dispatch('suma-store/fetchSumaSystemsList', {
               store:       this.$store,
               clusterName: this.clusterName
             });
-          }, 10000 );
+          }, 50000 );
         }
       },
       immediate: true
