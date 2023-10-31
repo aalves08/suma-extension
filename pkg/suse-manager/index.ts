@@ -42,7 +42,7 @@ export default function(plugin: IPlugin, args:any) {
     { component: () => import('./components/SumaNotification.vue') }
   );
 
-  // add table col on machine pools table under cluster details
+  // add table col on machine pools table under cluster details (number of patches available)
   plugin.addTableColumn(
     TableColumnLocation.RESOURCE,
     {
